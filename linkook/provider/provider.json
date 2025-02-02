@@ -408,5 +408,55 @@
         "keyword": {
             "notMatch": ["Oops! That page can’t be found."]
         }
+    },
+    "Kaggle": {
+        "mainUrl": "https://www.kaggle.com",
+        "profileUrl": "https://www.kaggle.com/^USER^",
+        "keyword": {
+            "notMatch": ["We can't find that page."]
+        }
+    },
+    "Codecademy": {
+        "mainUrl": "https://www.codecademy.com",
+        "profileUrl": "https://www.codecademy.com/profiles/^USER^",
+        "keyword": {
+            "notMatch": ["This profile could not be found"]
+        }
+    },
+    "CodePen": {
+        "mainUrl": "https://codepen.io",
+        "profileUrl": "https://codepen.io/^USER^",
+        "keyword": {
+            "notMatch": ["404"]
+        }
+    },
+    "DeviantArt": {
+        "mainUrl": "https://www.deviantart.com",
+        "profileUrl": "https://www.deviantart.com/^USER^",
+        "keyword": {
+            "notMatch": ["Browse Art"]
+        }
+    },
+    "Codeforces": {
+        "mainUrl": "https://codeforces.com",
+        "profileUrl": "https://codeforces.com/profile/^USER^",
+        "keyword": {
+            "notMatch": ["Ciao, Codeforces!"]
+        }
+    },
+    "LeetCode": {
+        "mainUrl": "https://leetcode.com",
+        "profileUrl": "https://leetcode.com/u/^USER^",
+        "keyword": {
+            "notMatch": ["Page Not Found"]
+        }
+    },
+    "Freelancer": {
+        "mainUrl": "https://www.freelancer.com/",
+        "profileUrl": "https://www.freelancer.com/u/^USER^",
+        "keyword": {
+            "notMatch": ["Looks like the page you are looking for doesn't exist."]
+        }
     }
+
 }
