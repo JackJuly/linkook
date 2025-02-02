@@ -128,11 +128,11 @@
         }
     },
     "YouTube": {
-        "mainUrl": "https://youtube.com",
-        "profileUrl": "https://youtube.com/user/^USER^",
-        "regexUrl": "https://(?:www.|m.)?youtube.com/(?:user/|channel/|@)^USER^",
-        "keyword": {
-            "notMatch": ["This page isn't available."]
+    "mainUrl": "https://youtube.com",
+    "profileUrl": "https://youtube.com/@^USER^",
+    "regexUrl": "https://(?:www.|m.)?youtube.com/@^USER^",
+    "keyword": {
+        "notMatch": ["This page isn't available."]
         }
     },
     "Bugcrowd": {
