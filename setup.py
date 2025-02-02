@@ -25,7 +25,7 @@ setup(
         "linkook.provider": ["provider.json"],
     },
     python_requires=">=3.7",
-    install_requires=["requests==2.28.2", "colorama==0.4.6"],
+    install_requires=["requests>=2", "colorama>=0.4.6"],
     entry_points={
         "console_scripts": [
             "linkook=linkook.linkook:main",
