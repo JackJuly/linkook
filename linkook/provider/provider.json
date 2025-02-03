@@ -26,7 +26,7 @@
     "LinkedIn": {
         "mainUrl": "https://www.linkedin.com",
         "profileUrl": "https://www.linkedin.com/in/^USER^",
-        "regexUrl": "https://(?:www|in).linkedin.com/in/^USER^",
+        "regexUrl": "https://(?:www.|in.).linkedin.com/in/^USER^",
         "keyword": {
             "notMatch": ["This page doesn’t exist"]
         },
@@ -107,14 +107,15 @@
         "regexUrl": "https://(?:www.|mobile.)?(?:twitter|x).com/^USER^",
         "keyword": {
             "Match": ["followers", "following"]
-        }
+        },
+        "isConnected": true
     },
     "Snapchat": {
         "mainUrl": "https://snapchat.com",
         "profileUrl": "https://snapchat.com/add/^USER^",
         "keyword": {
             "notMatch": ["Sorry! This user doesn't exist."]
-        }
+        }     
     },
     "Twitch": {
         "mainUrl": "https://twitch.tv",
@@ -215,6 +216,14 @@
             "notMatch": ["No such user"]
         }
     },
+    "Steam": {
+        "mainUrl": "https://steamcommunity.com",
+        "profileUrl": "https://steamcommunity.com/profiles/^USER^",
+        "keyword": {
+            "notMatch": ["The specified profile could not be found."]
+        },
+        "isUserId": true
+    },
     "Duolingo": {
         "mainUrl": "https://duolingo.com",
         "profileUrl": "https://duolingo.com/profile/^USER^",
@@ -261,11 +270,9 @@
         "profileUrl": "https://www.paypal.com/paypalme/^USER^",
         "keyword": {
             "notMatch": [
-                "We couldn't find this profile"
+                "We can’t find this profile" , "Make sure the link’s right and profile hasn’t been turned off."
             ],
-            "Match": [
-                "profile-card-username"
-            ]
+            "Match": ["Send"]
         }
     },
     "Discord": {
@@ -279,8 +286,9 @@
     "Pinterest": {
         "mainUrl": "https://www.pinterest.com",
         "profileUrl": "https://www.pinterest.com/^USER^",
+        "regexUrl": "https://(?:www.|in.|id.).pinterest.com/^USER^",
         "keyword": {
-            "notMatch": ["We're adding new ideas to your home feed!"]
+            "notMatch": ["We can't find that idea!", ""]
         }
     },
     "Behance": {
@@ -309,13 +317,6 @@
         "profileUrl": "https://www.patreon.com/^USER^",
         "keyword": {
             "notMatch": ["Sorry, this page isn't available"]
-        }
-    },
-    "Steam": {
-        "mainUrl": "https://steamcommunity.com",
-        "profileUrl": "https://steamcommunity.com/profiles/^USER^",
-        "keyword": {
-            "notMatch": ["The specified profile could not be found"]
         }
     },
     "Tumblr": {
