@@ -71,7 +71,11 @@
     },
     "TikTok": {
         "mainUrl": "https://tiktok.com",
-        "profileUrl": "https://tiktok.com/@^USER^"
+        "profileUrl": "https://tiktok.com/@^USER^",
+        "keyword": {
+            "notMatch": ["Couldn't find this account"
+            ],
+            "Match": ["followers", "following"]
     },
     "Instagram": {
         "mainUrl": "https://instagram.com",
