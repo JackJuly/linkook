@@ -26,7 +26,7 @@
     "LinkedIn": {
         "mainUrl": "https://www.linkedin.com",
         "profileUrl": "https://www.linkedin.com/in/^USER^",
-        "regexUrl": "https://(?:www|in).linkedin.com/in/^USER^",
+        "regexUrl": "https://(?:www.|in.)?linkedin.com/in/^USER^",
         "keyword": {
             "notMatch": ["This page doesn’t exist"]
         },
@@ -75,14 +75,16 @@
         "keyword": {
             "notMatch": ["Couldn't find this account"
             ],
-            "Match": ["followers", "following"]
+            "Match": ["Followers", "Following"]
+        }
     },
     "Instagram": {
         "mainUrl": "https://instagram.com",
         "profileUrl": "https://instagram.com/^USER^",
         "regexUrl": "https://(?:www.|mobile.)?instagram.com/^USER^",
         "keyword": {
-            "notMatch": ["Sorry, this page isn't available."]
+            "notMatch": ["Sorry, this page isn't available.", "The link you followed may be broken, or the page may have been removed."],
+            "Match": ["Followers", "Following"]
         }
     },
     "Facebook": {
@@ -110,6 +112,8 @@
         "profileUrl": "https://x.com/^USER^",
         "regexUrl": "https://(?:www.|mobile.)?(?:twitter|x).com/^USER^",
         "keyword": {
+            "notMatch": ["This account doesn’t exist", "Try searching for another"
+        ],
             "Match": ["followers", "following"]
         }
     },
@@ -146,7 +150,9 @@
         "mainUrl": "https://bugcrowd.com",
         "profileUrl": "https://bugcrowd.com/^USER^",
         "keyword": {
-            "notMatch": ["The requested page was not found"]
+            "notMatch": ["The requested page was not found"
+        ],
+            "Match": ["Overview", "Achievements", "All-time points"]
         },
         "isConnected": true
     },
@@ -265,10 +271,10 @@
         "profileUrl": "https://www.paypal.com/paypalme/^USER^",
         "keyword": {
             "notMatch": [
-                "We couldn't find this profile"
+                "We can’t find this profile", "Make sure the link’s right and profile hasn’t been turned off."
             ],
             "Match": [
-                "profile-card-username"
+                "Send", "Report this link"
             ]
         }
     },
@@ -283,8 +289,11 @@
     "Pinterest": {
         "mainUrl": "https://www.pinterest.com",
         "profileUrl": "https://www.pinterest.com/^USER^",
+        "regexUrl": "https://(?:id.|www.)?pinterest.com/in/^USER^",
         "keyword": {
-            "notMatch": ["We're adding new ideas to your home feed!"]
+            "notMatch": ["We can't find that idea!"
+        ],
+            "Match": ["Saved", "following", "Created"]
         }
     },
     "Behance": {
@@ -320,7 +329,8 @@
         "profileUrl": "https://steamcommunity.com/profiles/^USER^",
         "keyword": {
             "notMatch": ["The specified profile could not be found"]
-        }
+        },
+        "isUserId": true
     },
     "Tumblr": {
         "mainUrl": "https://www.tumblr.com",
@@ -333,7 +343,9 @@
         "mainUrl": "https://www.fiverr.com",
         "profileUrl": "https://www.fiverr.com/^USER^",
         "keyword": {
-            "notMatch": ["Oops! That page doesn’t exist or is unavailable."]
+            "notMatch": ["Oops! That page doesn’t exist or is unavailable."
+            ],
+            "Match": ["Contact Me", "About me"]
         }
     },
     "Upwork": {
@@ -460,7 +472,8 @@
         "mainUrl": "https://www.freelancer.com/",
         "profileUrl": "https://www.freelancer.com/u/^USER^",
         "keyword": {
-            "notMatch": ["Looks like the page you are looking for doesn't exist."]
+            "notMatch": ["Looks like the page you are looking for doesn't exist."],
+            "Match": ["Hire Me"]
         }
     }
 }
