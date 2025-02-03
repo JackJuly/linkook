@@ -82,11 +82,14 @@
         }
     },
     "Facebook": {
-        "mainUrl": "https://facebook.com",
-        "profileUrl": "https://facebook.com/^USER^",
+        "mainUrl": "https://www.facebook.com",
+        "profileUrl": "https://www.facebook.com/^USER^",
         "keyword": {
-            "notMatch": ["Sorry, this content isn't available right now"]
+            "notMatch": ["Sorry, this content isn't available right now"
+            ],
+            "Match": ["mutual friends", "posts"]
         }
+
     },
     "Reddit": {
         "mainUrl": "https://reddit.com",
@@ -258,12 +261,10 @@
         "profileUrl": "https://www.paypal.com/paypalme/^USER^",
         "keyword": {
             "notMatch": [
-                "<title>PayPal.Me</title><meta name=\"twitt",
-                "<div class=\"row error404\""
+                "We couldn't find this profile"
             ],
             "Match": [
-                "displayName",
-                "displayEmail"
+                "profile-card-username"
             ]
         }
     },
@@ -312,7 +313,7 @@
     },
     "Steam": {
         "mainUrl": "https://steamcommunity.com",
-        "profileUrl": "https://steamcommunity.com/id/^USER^",
+        "profileUrl": "https://steamcommunity.com/profiles/^USER^",
         "keyword": {
             "notMatch": ["The specified profile could not be found"]
         }
@@ -399,7 +400,7 @@
         "mainUrl": "https://www.slideshare.net",
         "profileUrl": "https://www.slideshare.net/^USER^",
         "keyword": {
-            "notMatch": ["This username ^USER^ is still available"]
+            "notMatch": ["This username"]
         }
     },
     "Wattpad": {
@@ -458,5 +459,4 @@
             "notMatch": ["Looks like the page you are looking for doesn't exist."]
         }
     }
-
 }
