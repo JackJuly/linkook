@@ -17,9 +17,18 @@
 
 使用以下命令安装：
 
-```
-git clone https://github.com/JackJuly/linkook && cd linkook
+1. 下载本 repo
 
+```shell
+git clone https://github.com/JackJuly/linkook
+cd linkook
+```
+2. 安装 `Linkook`
+```shell
+python setup.py install
+```
+或使用 `pip`
+```shell
 pip install .
 ```
 

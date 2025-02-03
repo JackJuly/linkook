@@ -93,6 +93,7 @@
             "Match": ["mutual friends", "posts"]
         }
 
+
     },
     "Reddit": {
         "mainUrl": "https://reddit.com",
@@ -135,12 +136,12 @@
         }
     },
     "YouTube": {
-    "mainUrl": "https://youtube.com",
-    "profileUrl": "https://youtube.com/@^USER^",
-    "regexUrl": "https://(?:www.|m.)?youtube.com/@^USER^",
-    "keyword": {
-        "notMatch": ["This page isn't available."]
-        }
+        "mainUrl": "https://youtube.com",
+        "profileUrl": "https://youtube.com/@^USER^",
+        "regexUrl": "https://(?:www.|m.)?youtube.com/@^USER^",
+        "keyword": {
+            "notMatch": ["This page isn't available."]
+            }
     },
     "Bugcrowd": {
         "mainUrl": "https://bugcrowd.com",

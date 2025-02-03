@@ -10,6 +10,8 @@ build/
 
 venv/
 
+dist/
+
 # cache
 __pycache__/
 

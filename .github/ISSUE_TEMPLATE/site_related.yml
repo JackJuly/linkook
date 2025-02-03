@@ -1,0 +1,52 @@
+name: Site-Related Support
+description: Use this template for any site scanning issues or requests
+title: "[Site]"
+labels: ["site-related"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Include the site name in the title.
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type
+      description: What type of issue is this?
+      options:
+        - Request new sites
+        - False positive
+        - False negative
+        - Update existing sites info
+      default: 0
+    validations:
+      required: true
+  - type: input
+    id: site-url
+    attributes:
+      label: Site URL
+      description: |
+        What is the URL of the website you want to add or report an issue with?
+      placeholder: https://github.com
+    validations:
+      required: false
+  - type: textarea
+    id: dscription
+    attributes:
+      label: Description
+      description: |
+        Please provide a detailed description of the issue or request.
+      placeholder: |
+        I would like to request the addition of the following site:
+        - Site Name: GitHub
+        - URL: https://github.com
+        - Profile URL: https://github.com/{username}
+
+        False positive/negative:
+        - Site Name: GitHub
+        - Suggestions: {suggestions}
+
+        Update existing sites info:
+        - Site Name: GitHub
+        - Update: {update url, profile url, etc.}
+    validations:
+      required: false

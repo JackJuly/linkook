@@ -135,7 +135,7 @@ class Provider:
         :return: A full regex, or empty string if user_regex is not set.
         """
         # regex_pattern = "(?:(?!&quot;)[^<>()\[\]'?\"\\\\])+"
-        regex_pattern = "[A-Za-z0-9._=+\-]+"
+        regex_pattern = r"[A-Za-z0-9._=+\-]+"
         link_pattern = self.build_regex_url(regex_pattern)
         self._link_regex = re.compile(link_pattern) if link_pattern else None
 

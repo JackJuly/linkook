@@ -15,11 +15,19 @@ English | [中文](README_zh.md)
 
 ## Installation
 
-Use the following commands to install:
+Use the following commands to install.
+1. Download this repo
 
+```shell
+git clone https://github.com/JackJuly/linkook
+cd linkook
 ```
-git clone https://github.com/JackJuly/linkook && cd linkook
-
+2. Install `Linkook`
+```shell
+python setup.py install
+```
+or
+```shell
 pip install .
 ```
 
@@ -27,7 +35,7 @@ pip install .
 
 ### Basic
 
-```
+```shell
 linkook <username>
 ```
 
@@ -63,7 +71,7 @@ Export the query results as a JSON file compatible with Neo4j database imports, 
 
 In Neo4j, use the **APOC** plugin to import the JSON data. The following **Cypher** code will import the data and, upon successful execution, return the counts of imported nodes and relationships.
 
-```
+```chpher
 CALL apoc.load.json("file:///neo4j_export.json") YIELD value
 CALL {
   WITH value

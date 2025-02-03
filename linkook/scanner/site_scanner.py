@@ -24,7 +24,7 @@ class SiteScanner:
         self.found_emails = set()  # Set of found emails
         self.check_breach = False  # Flag to check Hudson Rock breach
 
-        self.email_regex = re.compile("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
+        self.email_regex = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
 
     def deep_scan(self, user: str) -> dict:
 
