@@ -71,7 +71,7 @@ Export the query results as a JSON file compatible with Neo4j database imports, 
 
 In Neo4j, use the **APOC** plugin to import the JSON data. The following **Cypher** code will import the data and, upon successful execution, return the counts of imported nodes and relationships.
 
-```chpher
+```cypher
 CALL apoc.load.json("file:///neo4j_export.json") YIELD value
 CALL {
   WITH value
@@ -119,7 +119,7 @@ You can use `MATCH (n) RETURN n` to view all results and their connections.
 
 ## Comparison with Sherlock
 
-[Sherlock](https://github.com/sherlock-project/sherlock) is a great tool that finds social media accounts based on usernames, and this project (Linkook) was partly inspired by it.But Sherlock has some limitations.
+[Sherlock](https://github.com/sherlock-project/sherlock) is a great tool that finds social media accounts based on usernames, and this project (Linkook) was partly inspired by it. But Sherlock has some limitations.
 
 - Only searches for the same username on each platform.
 - May miss accounts if a user uses different usernames across platforms.
