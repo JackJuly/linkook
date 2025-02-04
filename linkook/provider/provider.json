@@ -73,8 +73,7 @@
         "mainUrl": "https://tiktok.com",
         "profileUrl": "https://tiktok.com/@^USER^",
         "keyword": {
-            "notMatch": ["Couldn't find this account"
-            ],
+            "notMatch": ["Couldn't find this account"],
             "Match": ["Followers", "Following"]
         }
     },
@@ -91,8 +90,7 @@
         "mainUrl": "https://www.facebook.com",
         "profileUrl": "https://www.facebook.com/^USER^",
         "keyword": {
-            "notMatch": ["Sorry, this content isn't available right now"
-            ],
+            "notMatch": ["Sorry, this content isn't available right now"],  
             "Match": ["mutual friends", "posts"]
         }
 
@@ -112,8 +110,7 @@
         "profileUrl": "https://x.com/^USER^",
         "regexUrl": "https://(?:www.|mobile.)?(?:twitter|x).com/^USER^",
         "keyword": {
-            "notMatch": ["This account doesn’t exist", "Try searching for another"
-        ],
+            "notMatch": ["This account doesn’t exist", "Try searching for another"],
             "Match": ["followers", "following"]
         }
     },
@@ -150,8 +147,7 @@
         "mainUrl": "https://bugcrowd.com",
         "profileUrl": "https://bugcrowd.com/^USER^",
         "keyword": {
-            "notMatch": ["The requested page was not found"
-        ],
+            "notMatch": ["The requested page was not found"],
             "Match": ["Overview", "Achievements", "All-time points"]
         },
         "isConnected": true
@@ -271,11 +267,8 @@
         "profileUrl": "https://www.paypal.com/paypalme/^USER^",
         "keyword": {
             "notMatch": [
-                "We can’t find this profile", "Make sure the link’s right and profile hasn’t been turned off."
-            ],
-            "Match": [
-                "Send", "Report this link"
-            ]
+                "We can’t find this profile", "Make sure the link’s right and profile hasn’t been turned off."],
+            "Match": ["Send", "Report this link"]
         }
     },
     "Discord": {
@@ -289,10 +282,9 @@
     "Pinterest": {
         "mainUrl": "https://www.pinterest.com",
         "profileUrl": "https://www.pinterest.com/^USER^",
-        "regexUrl": "https://(?:id.|www.)?pinterest.com/in/^USER^",
+        "regexUrl": "https://(?:id.|www.)?pinterest.com/^USER^",
         "keyword": {
-            "notMatch": ["We can't find that idea!"
-        ],
+            "notMatch": ["We can't find that idea!"],
             "Match": ["Saved", "following", "Created"]
         }
     },
@@ -343,8 +335,7 @@
         "mainUrl": "https://www.fiverr.com",
         "profileUrl": "https://www.fiverr.com/^USER^",
         "keyword": {
-            "notMatch": ["Oops! That page doesn’t exist or is unavailable."
-            ],
+            "notMatch": ["Oops! That page doesn’t exist or is unavailable."],
             "Match": ["Contact Me", "About me"]
         }
     },
