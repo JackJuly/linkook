@@ -86,6 +86,14 @@
             "Match": ["Followers", "Following"]
         }
     },
+    "Threads": {
+        "mainUrl": "https://www.threads.net/",
+        "profileUrl": "https://www.threads.net/@^USER^",
+        "keyword": {
+            "notMatch": ["Sorry, this page isn't available.", "The link you followed may be broken, or the page may have been removed."],
+            "Match": ["followers", "Mention"]
+        }
+    },
     "Facebook": {
         "mainUrl": "https://www.facebook.com",
         "profileUrl": "https://www.facebook.com/^USER^",
