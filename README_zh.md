@@ -6,12 +6,12 @@
 
 ![截图](images/01.png)
 
-**主要功能**
+### 主要功能
 
-- 通过给定的用户名在多个社交平台中搜索枚举社交账号
-- 进一步检索相互关联的其他社交账号、用户名、Email 等
-- 可使用 HudsonRock's Cybercrime Intelligence Database,查询关联的 Email 是否受到网络犯罪和信息窃取的影响
-- 支持将扫描结果导出为 neo4j 友好的 JSON 数据格式，可使用 neo4j 可视化展示社交账号、用户名、Email 及其相互关联情况
+- 通过给定的用户名在**多个社交平台**中搜索枚举社交账号
+- 进一步检索**相互关联**的其他社交账号、用户名、Email 等
+- 可使用 **HudsonRock's Cybercrime Intelligence Database**,查询关联的 Email 是否受到网络犯罪和信息窃取的影响
+- 支持将扫描结果导出为 neo4j 友好的 JSON 数据格式，可使用 **neo4j** 可视化展示社交账号、用户名、Email 及其相互关联情况
 
 ## 安装说明
 

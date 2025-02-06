@@ -18,7 +18,7 @@
         "mainUrl": "https://buymeacoffee.com",
         "profileUrl": "https://buymeacoffee.com/^USER^",
         "keyword": {
-            "notMatch": ["This page is missing"]
+            "Match": ["user_id"]
         },
         "hasEmail": false,
         "isConnected": true
