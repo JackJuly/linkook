@@ -2,7 +2,10 @@
 
 import os
 import sys
+import requests
 import argparse
+import subprocess
+import importlib.metadata
 from typing import Dict, Any
 from collections import deque
 
@@ -17,6 +20,7 @@ from linkook.outputer.visualize_output import Neo4jVisualizer
 from linkook.provider.provider_manager import ProviderManager
 from linkook.outputer.console_printer import CustomHelpFormatter
 
+PACKAGE_NAME = "linkook"
 
 def setup_logging(debug: bool):
     """
@@ -44,9 +48,28 @@ def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         usage=argparse.SUPPRESS, formatter_class=CustomHelpFormatter
     )
-    parser.add_argument("username", help="Username to check across social networks.")
     parser.add_argument(
-        "--concise", "-c", action="store_true", help="Print more concise results."
+        "username", 
+        nargs="?", 
+        default=None, 
+        help="Username to check across social networks."
+    )
+    parser.add_argument(
+        "--version", 
+        "-v", 
+        action="store_true", 
+        help="Show current version and check for updates."
+    )
+    parser.add_argument(
+        "--update", 
+        "-u", 
+        action="store_true", 
+        help="Update this tool via pipx if a newer version is available."
+    )
+    parser.add_argument(
+        "--concise", "-c", 
+        action="store_true", 
+        help="Print more concise results."
     )
     parser.add_argument(
         "--silent",
@@ -137,6 +160,60 @@ def create_output_directory(output_dir: str):
     else:
         logging.info(f"Using existing output directory at: {output_dir}")
 
+def check_version_from_pypi(package_name: str) -> str:
+    url = f"https://pypi.org/pypi/{package_name}/json"
+    try:
+        resp = requests.get(url, timeout=5)
+        if resp.status_code == 200:
+            data = resp.json()
+            return data["info"]["version"]
+    except Exception as e:
+        print(f"Error retrieving version from PyPI: {e}")
+    return None
+
+def show_version():
+    try:
+        current_version = importlib.metadata.version(PACKAGE_NAME)
+        message = f"{PACKAGE_NAME} version: {current_version}"
+        latest_version = check_version_from_pypi(PACKAGE_NAME)
+        if latest_version is None:
+            message += f", could not check for updates."
+            print(message)
+            return
+
+        if current_version == latest_version:
+            message += f", you are up-to-date."
+            print(message)
+        else:
+            message += f", a newer version is available: {latest_version}"
+            print(message)
+    except importlib.metadata.PackageNotFoundError:
+        print(f"{PACKAGE_NAME} does not seem to be installed via pip/pipx.")
+
+def update_tool():
+    latest_version = check_version_from_pypi(PACKAGE_NAME)
+    if not latest_version:
+        print("Could not determine latest version from PyPI.")
+        return
+    
+    try:
+        current_version = importlib.metadata.version(PACKAGE_NAME)
+        if current_version == latest_version:
+            print(f"You already running the latest version: {latest_version}.")
+            return
+        else:
+            print(f"New version available: {latest_version}. Updating via pipx...")
+    except importlib.metadata.PackageNotFoundError:
+        print("Cannot detect current version. Attempting to upgrade anyway.")
+
+    cmd = ["pipx", "upgrade", PACKAGE_NAME]
+    try:
+        subprocess.check_call(cmd)
+        print("Successfully upgraded with pipx.")
+    except FileNotFoundError:
+        print("pipx not found. Please install pipx or update manually.")
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to update via pipx: {e}")
 
 def handler(signal_received, frame):
     """
@@ -238,6 +315,17 @@ def main():
     Main function to orchestrate the aggregation process.
     """
     args = parse_arguments()
+    if args.version:
+        show_version()
+        sys.exit(0)
+    
+    if args.update:
+        update_tool()
+        sys.exit(0) 
+
+    if not args.username:
+        print("Please provide a username to scan.")
+        sys.exit(1)
 
     # Set up logging
     setup_logging(args.debug)
