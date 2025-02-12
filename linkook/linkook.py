@@ -383,6 +383,7 @@ def main():
         "found_accounts": scanner.found_accounts,
         "found_usernames": scanner.found_usernames,
         "found_emails": scanner.found_emails,
+        "found_passwords": scanner.found_passwords,
     }
 
     if args.silent:

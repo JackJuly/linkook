@@ -138,6 +138,25 @@ v1.0.1                                                     - by @JackJu1y
 
                 email_str = ", ".join(message_str)
                 print(f"{message} {email_str}")
+            
+            passwords = infos.get("passwords", {})
+            if passwords:
+                if not self.concise:
+                    message = "Leaked Passwords:\n"
+                else:
+                    message = f"{Fore.RED}{Style.BRIGHT}[!] Passwords:{Style.RESET_ALL}"
+                message_str = []
+                for email, password in passwords.items():
+
+                    password_part = f", ".join(password)
+                    if not self.concise:
+                        message_str.append(f"+ {email}: {Fore.MAGENTA}{password_part}{Style.RESET_ALL}")
+                        password_str = "\n".join(message_str)
+                    else:
+                        message_str.append(f" {Fore.RED}{email}({Fore.MAGENTA}{password_part}{Fore.RED}){Style.RESET_ALL}")
+                        password_str = ",".join(message_str)
+
+                print(f"{message}{password_str}")
 
             if other_links:
                 if not self.concise:
@@ -179,6 +198,9 @@ v1.0.1                                                     - by @JackJu1y
         found_accounts = print_content.get("found_accounts", {})
         found_usernames = print_content.get("found_usernames", set())
         found_emails = print_content.get("found_emails", set())
+        found_passwords = print_content.get("found_passwords", set())
+
+        passwords_dict = {email: passwords for email, passwords in found_passwords}
 
         total_links = sum(len(urls) for urls in found_accounts.values())
         total_sites = len(found_accounts)
@@ -190,6 +212,8 @@ v1.0.1                                                     - by @JackJu1y
         count_emails = len(found_emails)
         count_breached_emails = len(breached_emails)
 
+        count_passwords = sum(len(passwords) for _, passwords in found_passwords)
+
         total_links_text = f"{Fore.GREEN}{Style.BRIGHT}{total_links}{Style.RESET_ALL}"
         total_sites_text = f"{Fore.GREEN}{Style.BRIGHT}{total_sites}{Style.RESET_ALL}"
         count_usernames_text = (
@@ -199,6 +223,9 @@ v1.0.1                                                     - by @JackJu1y
         count_breached_emails_text = (
             f"{Fore.RED}{Style.BRIGHT}{count_breached_emails}{Style.RESET_ALL}"
         )
+        count_passwords_text = (
+            f"{Fore.RED}{Style.BRIGHT}{count_passwords}{Style.RESET_ALL}"
+        )
 
         email_message = (
             f"{Fore.MAGENTA}Found {count_emails_text} {Fore.MAGENTA}related emails"
@@ -206,6 +233,10 @@ v1.0.1                                                     - by @JackJu1y
         if breached_emails:
             email_message += f", {count_breached_emails_text} {Fore.MAGENTA}of them may have been breached{Style.RESET_ALL}"
         email_message += f"{Fore.MAGENTA}.{Style.RESET_ALL}"
+
+        password_message = (
+            f"{Fore.MAGENTA}Found {count_passwords_text} {Fore.MAGENTA}leaked passwords.{Style.RESET_ALL}"
+        )
 
         if print_summary:
             print(
@@ -215,7 +246,10 @@ v1.0.1                                                     - by @JackJu1y
             print(
                 f"{Fore.MAGENTA}Found {total_links_text} {Fore.MAGENTA}accounts on {total_sites_text} {Fore.MAGENTA}sites, obtained {count_usernames_text} {Fore.MAGENTA}related usernames.{Style.RESET_ALL}"
             )
-            print(f"{email_message}")
+            if count_emails > 0:
+                print(f"{email_message}")
+            if count_passwords > 0:
+                print(f"{password_message}")
             if found_usernames:
                 print(
                     f"{Fore.YELLOW}Related Usernames: {Style.BRIGHT}{', '.join(found_usernames)}{Style.RESET_ALL}"
@@ -225,8 +259,16 @@ v1.0.1                                                     - by @JackJu1y
                     f"{Fore.CYAN}Related Emails: {Style.BRIGHT}{', '.join(email for email, _ in found_emails)}{Style.RESET_ALL}"
                 )
             if breached_emails:
+                breached_str = []
+                for email in breached_emails:
+                    if email in passwords_dict:
+                        str = ", ".join(passwords_dict[email])
+                        breached_str.append(f"{email}({Fore.MAGENTA}{str}{Fore.RED})")
+                    else:
+                        breached_str.append(email)
+                    
                 print(
-                    f"{Fore.RED}Breached Emails: {Style.BRIGHT}{', '.join(breached_emails)}{Style.RESET_ALL}"
+                    f"{Fore.RED}Breached Emails: {Style.BRIGHT}{', '.join(breached_str)}{Style.RESET_ALL}"
                 )
             if found_accounts:
                 print(f"{Fore.GREEN}All Found Accounts:{Style.RESET_ALL}\n")

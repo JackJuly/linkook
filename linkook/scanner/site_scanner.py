@@ -22,6 +22,7 @@ class SiteScanner:
         self.found_accounts = {}  # Dictionary of found accounts
         self.found_usernames = set()  # Set of found usernames
         self.found_emails = set()  # Set of found emails
+        self.found_passwords = set()  # Set of found passwords
         self.check_breach = False  # Flag to check Hudson Rock breach
 
         self.email_regex = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
@@ -67,8 +68,13 @@ class SiteScanner:
         result["infos"] = search_res["infos"]
 
         self.found_usernames.update(result["other_usernames"])
-        found_email_tuple = tuple(sorted(result["infos"]["emails"].items()))
-        self.found_emails.update(found_email_tuple)
+        if result["infos"]["emails"]:
+            found_email_tuple = tuple(sorted(result["infos"]["emails"].items()))
+            self.found_emails.update(found_email_tuple)
+
+        if result["infos"]["passwords"]:
+            found_pass_tuple = tuple((key, tuple(value)) for key, value in result["infos"]["passwords"].items())
+            self.found_passwords.update(found_pass_tuple)
 
         if provider.name not in self.found_accounts:
             self.found_accounts[provider.name] = set()
@@ -216,7 +222,10 @@ class SiteScanner:
         result: Dict[str, Any] = {
             "other_links": {},
             "other_usernames": set(),
-            "infos": {"emails": {}},
+            "infos": {
+                "emails": {},
+                "passwords": {}
+                },
         }
 
         provider = self.current_provider
@@ -227,8 +236,15 @@ class SiteScanner:
         if provider.has_email:
             emails_set = self.search_info(html)["emails"]
             for email in emails_set:
+                if email in self.found_emails:
+                    result["infos"]["emails"][email] = self.found_emails[email]
+
                 if self.check_breach:
                     result["infos"]["emails"][email] = self.check_HudsonRock(email)
+                    if result["infos"]["emails"][email] == True:
+                        check_pass = self.check_ProxyNova(email)
+                        if check_pass is not None:
+                            result["infos"]["passwords"][email] = check_pass
                 else:
                     result["infos"]["emails"][email] = False
 
@@ -324,16 +340,45 @@ class SiteScanner:
         url = f"https://cavalier.hudsonrock.com/api/json/v2/osint-tools/search-by-email?email={email}"
         associated_string = "This email address is associated with a computer that was infected by an info-stealer, all the credentials saved on this computer are at risk of being accessed by cybercriminals. Visit https://www.hudsonrock.com/free-tools to discover additional free tools and Infostealers related data."
         not_associated_string = "This email address is not associated with a computer infected by an info-stealer. Visit https://www.hudsonrock.com/free-tools to discover additional free tools and Infostealers related data."
-        res = requests.get(url)
+        try:
+            res = requests.get(url, timeout=5)
+        except requests.exceptions.RequestException:
+            return False
         status_code = res.status_code
-        json_content = res.json()
         if status_code is None:
             return False
         if status_code == 404:
             return False
         if status_code == 200:
+            json_content = res.json()
             if json_content["message"] == associated_string:
                 return True
             elif json_content["message"] == not_associated_string:
                 return False
         return False
+
+    def check_ProxyNova(self, email: str) -> List[str]:
+        """
+        Check ProxyNova for leaked credentials.
+        """
+        url = f"https://api.proxynova.com/comb?query={email}"
+        try:
+            res = requests.get(url, timeout=5)
+        except requests.exceptions.RequestException:
+            return None
+        if res.status_code is None or res.status_code == 404:
+            return None
+        if res.status_code == 200:
+            json_content = res.json()
+            lines = json_content.get("lines", [])
+            password_set = set()
+            prefix = f"{email}:"
+            for line in lines:
+                if line.startswith(prefix):
+                    parts = line.split(":", 1)  
+                    if len(parts) == 2:
+                        pass_part = parts[1].strip()
+                        if pass_part:
+                            password_set.add(pass_part)
+            return list(password_set)
+        return None
