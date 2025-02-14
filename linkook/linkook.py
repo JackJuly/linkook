@@ -2,6 +2,7 @@
 
 import os
 import sys
+import getpass
 import requests
 import argparse
 import subprocess
@@ -88,6 +89,11 @@ def parse_arguments() -> argparse.Namespace:
         "-cb",
         action="store_true",
         help="Check if the username has been involved in a data breach, using data from HudsonRock's Cybercrime Intelligence Database",
+    )
+    parser.add_argument(
+        "--hibp",
+        action="store_true",
+        help="Use the Have I Been Pwned API to check if the username has been involved in a data breach.",
     )
     parser.add_argument(
         "--browse",
@@ -215,6 +221,68 @@ def update_tool():
     except subprocess.CalledProcessError as e:
         print(f"Failed to update via pipx: {e}")
 
+def get_hibp_key():
+    """
+    Check if a HIBP API key is stored in ~/.hibp.key.
+    If the file exists, read its content and return it.
+    If it does not exist, prompt the user (with hidden input) to enter the API key,
+    then save it to ~/.hibp.key and return the key.
+    """
+
+    hibp_key_path = os.path.expanduser("~/.hibp.key")
+    
+    if os.path.exists(hibp_key_path):
+        with open(hibp_key_path, "r") as f:
+            hibp_key = f.read().strip()
+            if hibp_key:
+                status = check_hibp_key(hibp_key)
+                if status is True:
+                    return hibp_key
+                
+                elif status is None:
+                    return None
+            else:
+                print("[!] The stored 'Have I Been Pwned' API key is empty.")
+
+    hibp_key = getpass.getpass("[*] Please enter your 'Have I Been Pwned' API key (Input Hidden): ")
+    if not hibp_key:
+        print("[X] No API key provided. Exiting.")
+        sys.exit(1)
+    status = check_hibp_key(hibp_key)
+    if status is False:
+        sys.exit(1)
+    if status is None:
+        return None
+    with open(hibp_key_path, "w") as f:
+        f.write(hibp_key.strip())
+        print(f"[*] HIBP API key saved to {hibp_key_path}")
+
+    return hibp_key
+
+def check_hibp_key(hibp_key: str):
+    """
+    Check if the HIBP API key is valid by making a test request to the API.
+
+    :param hibp_key: The HIBP API key.
+    :return: True if the key is valid, False otherwise.
+    """
+    url = "https://haveibeenpwned.com/api/v3/subscription/status"
+    headers = {
+            "hibp-api-key": hibp_key,
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:129.0) Gecko/20100101 Firefox/129.0",
+        }
+    resp = requests.get(url, headers=headers)
+    try:
+        resp = requests.get(url, headers=headers)
+        if resp.status_code == 200:
+            return True
+        if resp.status_code == 401:
+            print("[X] Invalid HIBP API key! Please check your key.")
+            return False
+    except Exception as e:
+        print(f"[?] Error checking HIBP API key: {e}. Using HudsonRock's Database instead.")
+    return None
+
 def handler(signal_received, frame):
     """
     Handle graceful exit on receiving a SIGINT (Ctrl+C).
@@ -222,7 +290,7 @@ def handler(signal_received, frame):
     :param signal_received: The signal number.
     :param frame: Current stack frame.
     """
-    print("\nProcess interrupted. Exiting gracefully.")
+    print("\nProcess interrupted. Exiting...")
     sys.exit(0)
 
 
@@ -278,6 +346,7 @@ def scan_queue(
                     "other_links": scan_result.get("other_links", {}),
                     "other_links_flag": other_links_flag,
                     "infos": scan_result.get("infos", {}),
+                    "hibp": scanner.hibp_key,
                 }
             )
 
@@ -355,6 +424,16 @@ def main():
 
     console_printer.banner()
 
+    setCheckBreach = False
+    hibp_key = None
+
+    if args.check_breach:
+        setCheckBreach = True
+
+    if args.hibp:
+        setCheckBreach = True
+        hibp_key = get_hibp_key()
+
     # Initialize ProviderManager
     manager = ProviderManager(
         remote_json_url="https://raw.githubusercontent.com/JackJuly/linkook/refs/heads/main/linkook/provider/provider.json",
@@ -370,10 +449,11 @@ def main():
         logging.error(f"Failed to load providers: {e}")
         sys.exit(1)
 
-    scanner = SiteScanner(timeout=10, proxy=None)
+    scanner = SiteScanner(timeout=5, proxy=None)
     scanner.all_providers = manager.get_all_providers()
     scanner.to_scan = manager.filter_providers(is_connected=not args.scan_all)
-    scanner.check_breach = args.check_breach
+    scanner.check_breach = setCheckBreach
+    scanner.hibp_key = hibp_key
 
     username = args.username
     results = scan_queue(username, scanner, console_printer, args)

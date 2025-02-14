@@ -24,6 +24,7 @@ class SiteScanner:
         self.found_emails = set()  # Set of found emails
         self.found_passwords = set()  # Set of found passwords
         self.check_breach = False  # Flag to check Hudson Rock breach
+        self.hibp_key = None  # HaveIBeenPwned API key
 
         self.email_regex = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
 
@@ -240,7 +241,10 @@ class SiteScanner:
                     result["infos"]["emails"][email] = self.found_emails[email]
 
                 if self.check_breach:
-                    result["infos"]["emails"][email] = self.check_HudsonRock(email)
+                    if self.hibp_key is not None:
+                        result["infos"]["emails"][email] = self.check_HaveIBeenPwned(email)
+                    else:
+                        result["infos"]["emails"][email] = self.check_HudsonRock(email)
                     if result["infos"]["emails"][email] == True:
                         check_pass = self.check_ProxyNova(email)
                         if check_pass is not None:
@@ -332,6 +336,28 @@ class SiteScanner:
         if matches:
             result["emails"].update(matches)
         return result
+
+    def check_HaveIBeenPwned(self, email: str) -> bool:
+        """
+        Check if the user's data has been leaked in the HaveIBeenPwned database.
+        """
+        url = f"https://haveibeenpwned.com/api/v3/breachedaccount/{email}"
+        headers = {
+            "hibp-api-key": self.hibp_key,
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:129.0) Gecko/20100101 Firefox/129.0",
+        }
+        try:
+            res = requests.get(url, headers=headers, timeout=5)
+        except requests.exceptions.RequestException:
+            return False
+        status_code = res.status_code
+        if status_code is None:
+            return False
+        if status_code == 404:
+            return False
+        if status_code == 200:
+            return True
+        return False
 
     def check_HudsonRock(self, email: str) -> bool:
         """

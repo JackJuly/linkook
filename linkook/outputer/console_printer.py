@@ -90,6 +90,7 @@ v1.0.1                                                     - by @JackJu1y
         other_links = result.get("other_links", {})
         other_links_flag = result.get("other_links_flag", False)
         infos = result.get("infos", {})
+        hibp = result.get("hibp", None)
         status_text = ""
 
         if self.print_all or status == "FOUND":
@@ -130,9 +131,14 @@ v1.0.1                                                     - by @JackJu1y
                 message_str = []
                 for email, isbreached in emails.items():
                     if isbreached:
-                        message_str.append(
-                            f"{Fore.RED}{email}(breach detected){Style.RESET_ALL}"
-                        )
+                        if hibp is not None:
+                            message_str.append(
+                                f"{Fore.RED}{email}(HIBP detected){Style.RESET_ALL}"
+                            )
+                        else:
+                            message_str.append(
+                                f"{Fore.RED}{email}(Breach detected){Style.RESET_ALL}"
+                            )
                     else:
                         message_str.append(f"{Fore.CYAN}{email}{Style.RESET_ALL}")
 
