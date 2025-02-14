@@ -149,7 +149,7 @@
         "regexUrl": "https://(?:www.|m.)?youtube.com/@^USER^",
         "keyword": {
             "notMatch": ["This page isn't available."]
-            }
+        }
     },
     "Bugcrowd": {
         "mainUrl": "https://bugcrowd.com",
@@ -219,7 +219,7 @@
         "mainUrl": "https://soundcloud.com",
         "profileUrl": "https://soundcloud.com/^USER^",
         "keyword": {
-            "notMatch": ["Sorry, we can't find that user."]
+            "notMatch": ["We can’t find that user."]
         }
     },
     "Keybase": {
@@ -473,6 +473,38 @@
         "keyword": {
             "notMatch": ["Looks like the page you are looking for doesn't exist."],
             "Match": ["Hire Me"]
+        }
+    },
+    "Gravatar": {
+        "mainUrl": "https://gravatar.com",
+        "profileUrl": "https://gravatar.com/^USER^",
+        "keyword": {
+            "notMatch": ["Uh oh. Page not found"]
+            },
+        "isConnected": true,
+        "hasEmail": true
+    },
+    "Xing": {
+        "mainUrl": "https://www.xing.com",
+        "profileUrl": "https://www.xing.com/profile/^USER^",
+        "keyword": {
+            "notMatch": ["This page appears to have gone with the wind."]
+        },
+    "hasEmail": true
+    },
+    "Dev.to": {
+        "mainUrl": "https://dev.to",
+        "profileUrl": "https://dev.to/^USER^",
+        "keyword": {
+            "notMatch": ["This page does not exist"]
+        },
+    "isConnected": true
+    },
+        "Kaskus": {
+        "mainUrl": "https://www.kaskus.co.id",
+        "profileUrl": "https://www.kaskus.co.id/profile/@^USER^",
+        "keyword": {
+            "notMatch": ["We can't find the page you are looking for"]
         }
     }
 }
