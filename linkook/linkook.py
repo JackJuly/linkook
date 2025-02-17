@@ -2,16 +2,17 @@
 
 import os
 import sys
+import queue
 import getpass
 import requests
 import argparse
 import subprocess
 import importlib.metadata
 from typing import Dict, Any
-from collections import deque
 
 import signal
 import logging
+import threading
 from colorama import init as colorama_init
 
 from linkook.scanner.site_scanner import SiteScanner
@@ -294,6 +295,75 @@ def handler(signal_received, frame):
     sys.exit(0)
 
 
+def process_provider(user, provider_name, scanner, console_printer, args, queue, results, other_links_flag):
+    """
+    Function to process each provider in the queue using thread pool.
+    Executes deep scan, prints results, and checks for linked accounts to add to the queue.
+    """
+    # Get the current provider to scan
+    current_provider = scanner.all_providers.get(provider_name)
+    
+    if not current_provider:
+        return
+
+    # Perform deep scan for the given user
+    scan_result = scanner.deep_scan(user, current_provider)
+    
+    # Notify results to console
+    if not args.silent:
+        console_printer.update(
+            {
+                "site_name": provider_name,
+                "status": "FOUND" if scan_result["found"] else "NOT FOUND",
+                "profile_url": scan_result["profile_url"],
+                "other_links": scan_result.get("other_links", {}),
+                "other_links_flag": other_links_flag,
+                "infos": scan_result.get("infos", {}),
+                "hibp": scanner.hibp_key,
+            }
+        )
+
+    # Store the scan result for the provider
+    results[provider_name] = scan_result
+
+    # Process linked accounts (other links)
+    other_links = scan_result.get("other_links", {})
+    for linked_provider_name, linked_urls in other_links.items():
+        provider = scanner.all_providers.get(linked_provider_name)
+        if not provider:
+            logging.debug(f"Provider {linked_provider_name} not found")
+            continue
+        if not provider.is_connected:
+            logging.debug(f"Provider {linked_provider_name} has no connection")
+            continue
+        if not provider.keyword:
+            logging.debug(f"Provider {linked_provider_name} has no keywords configured")
+            continue
+        for linked_url in linked_urls:
+            logging.debug(f"Checking {linked_url}")
+            if linked_url in scanner.visited_urls:
+                continue
+            new_user = provider.extract_user(linked_url).pop()
+            if new_user != user:
+                logging.debug(f"Adding {linked_url} to queue")
+                queue.put((new_user, linked_provider_name, True))
+            else:
+                logging.debug(f"User {new_user} already in queue")
+
+
+def worker(q, scanner, console_printer, args, results):
+    while True:
+        try:
+            user, provider_name, other_links_flag = q.get(block=True, timeout=1)
+            try:
+                process_provider(user, provider_name, scanner, console_printer, args, q, results, other_links_flag)
+            finally:
+                q.task_done()
+        except queue.Empty:  
+            break
+        except Exception as e:
+            print(f"Error processing task: {e}")
+
 def scan_queue(
     user: str,
     scanner: SiteScanner,
@@ -301,80 +371,27 @@ def scan_queue(
     args: argparse.Namespace,
 ) -> Dict[str, Any]:
     """
-    scan queue handler function, execute global provider scan and return all discovered account information.
-
-    :param user: The username to scan.
-    :param scanner: The SiteScanner instance.
-    :param console_printer: The ConsolePrinter instance.
-    :param args: The parsed command-line arguments.
+    Scan queue handler function, execute global provider scan and return all discovered account information in parallel using ThreadPoolExecutor.
     """
-
     console_printer.start(user)
 
-    queue = deque()
+    q = queue.Queue()
     for provider_name in scanner.to_scan.keys():
-        queue.append((user, provider_name))
+        q.put((user, provider_name, False))
 
     results = {}
-    counter = 0
-    other_links_flag = False
-    provider_count = len(scanner.to_scan.keys())
+    threads = []
+    num_workers = 5
 
-    while queue:
-
-        if counter == provider_count:
-            other_links_flag = True
-            console_printer.start_other_links()
-        counter += 1
-
-        user, provider_name = queue.popleft()
-
-        scanner.current_provider = scanner.all_providers.get(provider_name)
-
-        if not scanner.current_provider:
-            continue
-
-        scan_result = scanner.deep_scan(user)
-
-        # Notify results to console
-        if not args.silent:
-            console_printer.update(
-                {
-                    "site_name": provider_name,
-                    "status": "FOUND" if scan_result["found"] else "NOT FOUND",
-                    "profile_url": scan_result["profile_url"],
-                    "other_links": scan_result.get("other_links", {}),
-                    "other_links_flag": other_links_flag,
-                    "infos": scan_result.get("infos", {}),
-                    "hibp": scanner.hibp_key,
-                }
-            )
-
-        results[provider_name] = scan_result
-
-        other_links = scan_result.get("other_links", {})
-
-        for provider_name, linked_urls in other_links.items():
-            provider = scanner.all_providers.get(provider_name)
-            if not provider:
-                logging.debug(f"Provider {provider_name} not found")
-                continue
-            if not provider.is_connected:
-                logging.debug(f"Provider {provider_name} has no connection")
-                continue
-            if not provider.keyword:
-                logging.debug(f"Provider {provider_name} has no keywords configured")
-                continue
-            for linked_url in linked_urls:
-                logging.debug(f"Checking {linked_url}")
-                if linked_url in scanner.visited_urls:
-                    continue
-                new_user = provider.extract_user(linked_url).pop()
-                if new_user != user:
-                    logging.debug(f"Adding {linked_url} to queue")
-                    queue.append((new_user, provider_name))
-                else:
-                    logging.debug(f"User {new_user} already in queue")
+    for _ in range(num_workers):
+        t = threading.Thread(target=worker, args=(q, scanner, console_printer, args, results))
+        t.start()
+        threads.append(t)
+    
+    q.join()
+    
+    for t in threads:
+        t.join()
 
     return results
 

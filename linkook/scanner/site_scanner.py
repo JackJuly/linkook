@@ -16,7 +16,6 @@ class SiteScanner:
         self.timeout = timeout
         self.proxy = proxy
         self.all_providers = {}  # Dictionary of all providers
-        self.current_provider = None  # Current provider
         self.to_scan = {}  # Dictionary of providers to scan
         self.visited_urls = set()  # Set of visited URLs
         self.found_accounts = {}  # Dictionary of found accounts
@@ -28,7 +27,7 @@ class SiteScanner:
 
         self.email_regex = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
 
-    def deep_scan(self, user: str) -> dict:
+    def deep_scan(self, user: str, current_provider: Provider) -> dict:
 
         result: Dict[str, Any] = {
             "found": False,
@@ -39,7 +38,7 @@ class SiteScanner:
             "error": None,
         }
 
-        provider = self.current_provider
+        provider = current_provider
 
         profile_url = provider.build_url(user)
 
@@ -50,8 +49,8 @@ class SiteScanner:
 
         result["profile_url"] = profile_url
 
-        status_code, html_content = self.fetch_user_profile(user)
-        check_res = self.check_availability(status_code, html_content)
+        status_code, html_content = self.fetch_user_profile(user, provider)
+        check_res = self.check_availability(status_code, html_content, provider)
 
         result["found"] = check_res["found"]
         result["error"] = check_res["error"]
@@ -62,7 +61,7 @@ class SiteScanner:
         if not check_res["found"]:
             return result
 
-        search_res = self.search_in_response(html_content)
+        search_res = self.search_in_response(html_content, provider)
 
         result["other_links"] = search_res["other_links"]
         result["other_usernames"] = search_res["other_usernames"]
@@ -99,7 +98,7 @@ class SiteScanner:
 
         return result
 
-    def check_availability(self, status_code: int, html_content: str) -> dict:
+    def check_availability(self, status_code: int, html_content: str, current_provider: Provider) -> dict:
         """
         This method checks if a given username is available on a specific provider.
         """
@@ -109,7 +108,7 @@ class SiteScanner:
             "error": None,
         }
 
-        provider = self.current_provider
+        provider = current_provider
 
         # Check status code
 
@@ -166,7 +165,7 @@ class SiteScanner:
         return result
 
     def fetch_user_profile(
-        self, user: str
+        self, user: str, current_provider: Provider
     ) -> Tuple[Optional[int], Optional[str], list]:
         """
         Overrides the base method to return status_code, HTML content, and redirect history.
@@ -176,7 +175,7 @@ class SiteScanner:
         :return: A tuple (status_code, html_content, redirect_history).
         """
 
-        provider = self.current_provider
+        provider = current_provider
         method = provider.request_method or "GET"
         headers = {
             "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:129.0) Gecko/20100101 Firefox/129.0",
@@ -218,7 +217,7 @@ class SiteScanner:
             logging.error(f"Failed to fetch profile page for URL {url}: {e}")
             return None, None
 
-    def search_in_response(self, html: str) -> bool:
+    def search_in_response(self, html: str, current_provider: Provider) -> bool:
 
         result: Dict[str, Any] = {
             "other_links": {},
@@ -229,7 +228,7 @@ class SiteScanner:
                 },
         }
 
-        provider = self.current_provider
+        provider = current_provider
 
         if not provider.is_connected:
             return result
