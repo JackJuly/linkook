@@ -68,7 +68,7 @@ v1.0.1                                                     - by @JackJu1y
         """
         self.current_username = username
         print(
-            f"{Fore.CYAN}Scanning for username: {Style.BRIGHT}{username}{Style.RESET_ALL}"
+            f"{Fore.CYAN}\rScanning for username: {Style.BRIGHT}{username}{Style.RESET_ALL}"
         )
 
     def start_other_links(self):

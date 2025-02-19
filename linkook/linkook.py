@@ -2,17 +2,15 @@
 
 import os
 import sys
-import queue
 import getpass
 import requests
 import argparse
 import subprocess
 import importlib.metadata
-from typing import Dict, Any
 
 import signal
 import logging
-import threading
+from colorama import Fore, Style
 from colorama import init as colorama_init
 
 from linkook.scanner.site_scanner import SiteScanner
@@ -21,6 +19,7 @@ from linkook.outputer.console_printer import ConsolePrinter
 from linkook.outputer.visualize_output import Neo4jVisualizer
 from linkook.provider.provider_manager import ProviderManager
 from linkook.outputer.console_printer import CustomHelpFormatter
+from linkook.scanner.scanner_manager import ScannerManager, set_exiting
 
 PACKAGE_NAME = "linkook"
 
@@ -175,7 +174,7 @@ def check_version_from_pypi(package_name: str) -> str:
             data = resp.json()
             return data["info"]["version"]
     except Exception as e:
-        print(f"Error retrieving version from PyPI: {e}")
+        return None
     return None
 
 def show_version():
@@ -197,30 +196,53 @@ def show_version():
     except importlib.metadata.PackageNotFoundError:
         print(f"{PACKAGE_NAME} does not seem to be installed via pip/pipx.")
 
-def update_tool():
+
+def check_update(verbose: bool) -> bool:
+
+    print(f"{Fore.CYAN}Checking for updates...{Style.RESET_ALL}", end='', flush=True)
     latest_version = check_version_from_pypi(PACKAGE_NAME)
-    if not latest_version:
-        print("Could not determine latest version from PyPI.")
-        return
+    if latest_version is None:
+        if verbose:
+            print(f"{Fore.YELLOW}\rCould not determine latest version from PyPI.{Style.RESET_ALL}")
+        else:
+            print(f"{Fore.CYAN}\rChecking for updates...{Fore.YELLOW}Error{Style.RESET_ALL}")
+        return False
     
     try:
         current_version = importlib.metadata.version(PACKAGE_NAME)
         if current_version == latest_version:
-            print(f"You already running the latest version: {latest_version}.")
-            return
+            if verbose:
+                print(f"{Fore.GREEN}\rYou already running the latest version: {Style.BRIGHT}{latest_version}.{Style.RESET_ALL}")
+            # else:
+                # print(f"{Fore.CYAN}\rChecking for updates...{Fore.GREEN}Up-to-date.{Style.RESET_ALL}")
+            return False
         else:
-            print(f"New version available: {latest_version}. Updating via pipx...")
+            if verbose:
+                print(f"{Fore.CYAN}\rNew version available: {Fore.GREEN}{Style.BRIGHT}{latest_version}{Style.RESET_ALL}{Fore.CYAN}. Updating via pipx...{Style.RESET_ALL}")
+            else:
+                print(f"{Fore.CYAN}\rNew version available: {Fore.GREEN}{Style.BRIGHT}{latest_version}.{Style.RESET_ALL}")
+            return True
     except importlib.metadata.PackageNotFoundError:
-        print("Cannot detect current version. Attempting to upgrade anyway.")
+        print(f"{Fore.MAGENTA}Cannot detect current version. Attempting to upgrade anyway.{Style.RESET_ALL}")
+        return True
+
+
+def update_tool():
+    
+
+    need_update = check_update(verbose=True)
+
+    if not need_update:
+        return
 
     cmd = ["pipx", "upgrade", PACKAGE_NAME]
     try:
         subprocess.check_call(cmd)
-        print("Successfully upgraded with pipx.")
+        print(f"{Fore.GREEN}Successfully upgraded with pipx.{Style.RESET_ALL}")
     except FileNotFoundError:
-        print("pipx not found. Please install pipx or update manually.")
+        print(f"{Fore.YELLOW}{Style.BRIGHT}pipx{Style.RESET_ALL} {Fore.MAGENTA}not found. Please install pipx or update manually.{Style.RESET_ALL}")
     except subprocess.CalledProcessError as e:
-        print(f"Failed to update via pipx: {e}")
+        print(f"{Fore.RED}Failed to update via pipx: {e}{Style.RESET_ALL}")
 
 def get_hibp_key():
     """
@@ -272,16 +294,19 @@ def check_hibp_key(hibp_key: str):
             "hibp-api-key": hibp_key,
             "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:129.0) Gecko/20100101 Firefox/129.0",
         }
-    resp = requests.get(url, headers=headers)
     try:
-        resp = requests.get(url, headers=headers)
+        print(f"{Fore.CYAN}\rChecking Have I Been Pwned API key...{Style.RESET_ALL}", end='', flush=True)
+        resp = requests.get(url, timeout=5, headers=headers)
         if resp.status_code == 200:
+            print(f"{Fore.CYAN}\rChecking Have I Been Pwned API key...{Fore.GREEN}OK{Style.RESET_ALL}")
             return True
         if resp.status_code == 401:
-            print("[X] Invalid HIBP API key! Please check your key.")
+            print(f"{Fore.RED}\rInvalid HIBP API key! Please check your key.{Style.RESET_ALL}")
             return False
+        else:
+            print(f"{Fore.YELLOW}\rUnexpected error checking HIBP API key: {Fore.RED}{resp.status_code}{Style.RESET_ALL}")
     except Exception as e:
-        print(f"[?] Error checking HIBP API key: {e}. Using HudsonRock's Database instead.")
+        print(f"{Fore.YELLOW}\rError checking HIBP API key. Using HudsonRock's Database instead.{Style.RESET_ALL}")
     return None
 
 def handler(signal_received, frame):
@@ -291,115 +316,22 @@ def handler(signal_received, frame):
     :param signal_received: The signal number.
     :param frame: Current stack frame.
     """
-    print("\nProcess interrupted. Exiting...")
+    print(f"\n{Fore.YELLOW}Process interrupted. Exiting...{Style.RESET_ALL}")
+    set_exiting()
     sys.exit(0)
 
-
-def process_provider(user, provider_name, scanner, console_printer, args, queue, results, other_links_flag):
-    """
-    Function to process each provider in the queue using thread pool.
-    Executes deep scan, prints results, and checks for linked accounts to add to the queue.
-    """
-    # Get the current provider to scan
-    current_provider = scanner.all_providers.get(provider_name)
-    
-    if not current_provider:
-        return
-
-    # Perform deep scan for the given user
-    scan_result = scanner.deep_scan(user, current_provider)
-    
-    # Notify results to console
-    if not args.silent:
-        console_printer.update(
-            {
-                "site_name": provider_name,
-                "status": "FOUND" if scan_result["found"] else "NOT FOUND",
-                "profile_url": scan_result["profile_url"],
-                "other_links": scan_result.get("other_links", {}),
-                "other_links_flag": other_links_flag,
-                "infos": scan_result.get("infos", {}),
-                "hibp": scanner.hibp_key,
-            }
-        )
-
-    # Store the scan result for the provider
-    results[provider_name] = scan_result
-
-    # Process linked accounts (other links)
-    other_links = scan_result.get("other_links", {})
-    for linked_provider_name, linked_urls in other_links.items():
-        provider = scanner.all_providers.get(linked_provider_name)
-        if not provider:
-            logging.debug(f"Provider {linked_provider_name} not found")
-            continue
-        if not provider.is_connected:
-            logging.debug(f"Provider {linked_provider_name} has no connection")
-            continue
-        if not provider.keyword:
-            logging.debug(f"Provider {linked_provider_name} has no keywords configured")
-            continue
-        for linked_url in linked_urls:
-            logging.debug(f"Checking {linked_url}")
-            if linked_url in scanner.visited_urls:
-                continue
-            new_user = provider.extract_user(linked_url).pop()
-            if new_user != user:
-                logging.debug(f"Adding {linked_url} to queue")
-                queue.put((new_user, linked_provider_name, True))
-            else:
-                logging.debug(f"User {new_user} already in queue")
-
-
-def worker(q, scanner, console_printer, args, results):
-    while True:
-        try:
-            user, provider_name, other_links_flag = q.get(block=True, timeout=1)
-            try:
-                process_provider(user, provider_name, scanner, console_printer, args, q, results, other_links_flag)
-            finally:
-                q.task_done()
-        except queue.Empty:  
-            break
-        except Exception as e:
-            print(f"Error processing task: {e}")
-
-def scan_queue(
-    user: str,
-    scanner: SiteScanner,
-    console_printer: ConsolePrinter,
-    args: argparse.Namespace,
-) -> Dict[str, Any]:
-    """
-    Scan queue handler function, execute global provider scan and return all discovered account information in parallel using ThreadPoolExecutor.
-    """
-    console_printer.start(user)
-
-    q = queue.Queue()
-    for provider_name in scanner.to_scan.keys():
-        q.put((user, provider_name, False))
-
-    results = {}
-    threads = []
-    num_workers = 5
-
-    for _ in range(num_workers):
-        t = threading.Thread(target=worker, args=(q, scanner, console_printer, args, results))
-        t.start()
-        threads.append(t)
-    
-    q.join()
-    
-    for t in threads:
-        t.join()
-
-    return results
-
+def scan_queue(user, scanner, console_printer, args):
+    signal.signal(signal.SIGINT, handler)
+    scanner_manager = ScannerManager(user, scanner, console_printer, args)
+    return scanner_manager.run_scan()
 
 def main():
     """
     Main function to orchestrate the aggregation process.
     """
+    # Handle Ctrl+C gracefully
+    signal.signal(signal.SIGINT, handler)
+
     args = parse_arguments()
     if args.version:
         show_version()
@@ -410,7 +342,7 @@ def main():
         sys.exit(0) 
 
     if not args.username:
-        print("Please provide a username to scan.")
+        print(f"{Fore.RED}Please provide a username to scan.{Style.RESET_ALL}")
         sys.exit(1)
 
     # Set up logging
@@ -427,9 +359,6 @@ def main():
     else:
         force_local = True
 
-    # Handle Ctrl+C gracefully
-    signal.signal(signal.SIGINT, handler)
-
     # Initialize ConsolePrinter
     console_printer = ConsolePrinter(
         debug=args.debug,
@@ -440,6 +369,8 @@ def main():
     )
 
     console_printer.banner()
+
+    check_update(verbose=False)
 
     setCheckBreach = False
     hibp_key = None

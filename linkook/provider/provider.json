@@ -480,17 +480,15 @@
         "profileUrl": "https://gravatar.com/^USER^",
         "keyword": {
             "notMatch": ["Uh oh. Page not found"]
-            },
-        "isConnected": true,
-        "hasEmail": true
+        },
+        "isConnected": true
     },
     "Xing": {
         "mainUrl": "https://www.xing.com",
         "profileUrl": "https://www.xing.com/profile/^USER^",
         "keyword": {
             "notMatch": ["This page appears to have gone with the wind."]
-        },
-    "hasEmail": true
+        }
     },
     "Dev.to": {
         "mainUrl": "https://dev.to",
@@ -498,9 +496,9 @@
         "keyword": {
             "notMatch": ["This page does not exist"]
         },
-    "isConnected": true
+        "isConnected": true
     },
-        "Kaskus": {
+    "Kaskus": {
         "mainUrl": "https://www.kaskus.co.id",
         "profileUrl": "https://www.kaskus.co.id/profile/@^USER^",
         "keyword": {
