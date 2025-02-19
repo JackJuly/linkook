@@ -56,7 +56,7 @@ class ConsolePrinter:
  \ \_____\  \ \_\  \ \_\\"\_\  \ \_\ \_\  \ \_____\  \ \_____\  \ \_\ \_\ 
   \/_____/   \/_/   \/_/ \/_/   \/_/\/_/   \/_____/   \/_____/   \/_/\/_/ 
 
-v1.0.1                                                     - by @JackJu1y
+v1.1.0                                                     - by @JackJu1y
 """
         print(f"{Fore.CYAN}{Style.BRIGHT}{banner}{Style.RESET_ALL}")
 
@@ -181,7 +181,6 @@ v1.0.1                                                     - by @JackJu1y
                             f"{Fore.YELLOW}{Style.BRIGHT}[+] {provider}:{Style.RESET_ALL} {Fore.YELLOW}{urls_str}{Style.RESET_ALL}"
                         )
 
-            logging.debug(f"Site: {site}, Status: {status_text}, URL: {profile_url}")
 
     def finish_username(self, username: str):
         """

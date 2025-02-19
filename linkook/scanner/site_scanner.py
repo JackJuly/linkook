@@ -79,7 +79,6 @@ class SiteScanner:
         if provider.name not in self.found_accounts:
             self.found_accounts[provider.name] = set()
         self.found_accounts[provider.name].add(profile_url)
-        logging.debug(f"Updated found accounts: {self.found_accounts}")
 
         for pname, urls in result["other_links"].items():
             provider = self.all_providers.get(pname)
@@ -94,7 +93,6 @@ class SiteScanner:
                 username = provider.extract_user(url).pop()
                 url = provider.build_url(username)
                 self.found_accounts[pname].add(urls)
-        logging.debug(f"Updated found accounts: {self.found_accounts}")
 
         return result
 
@@ -277,18 +275,12 @@ class SiteScanner:
                 p for pname, p in self.all_providers.items() if pname != provider.name
             ]
 
-        logging.debug(
-            f"Searching for links from {provs_to_search}, total: {len(provs_to_search)}"
-        )
-
         result["other_links"] = self.search_new_links(html, provs_to_search)
 
         other_usernames_set = self.search_new_usernames(html, provs_to_search)
 
         result["other_usernames"].update(other_usernames_set)
 
-        logging.debug(f"Discovered links: {result['other_links']}")
-        logging.debug(f"Discovered usernames: {result['other_usernames']}")
 
         return result
 

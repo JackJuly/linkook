@@ -5,6 +5,7 @@ import json
 import logging
 import requests
 from typing import Dict
+from colorama import Fore, Style
 from importlib.resources import files
 from linkook.provider.provider import Provider
 from requests.exceptions import RequestException
@@ -59,7 +60,7 @@ class ProviderManager:
             except (RequestException, ValueError) as e:
                 # If any network or JSON parsing error occurs, we fallback to local
                 print(
-                    f"[WARN] Remote loading failed! Falling back to local provider.json..."
+                    f"{Fore.YELLOW}Remote loading failed! Falling back to local provider.json...{Style.RESET_ALL}"
                 )
                 logging.warning(f"Remote loading failed: {e}")
                 data = self._load_local_json(self.local_json_path)
@@ -94,8 +95,8 @@ class ProviderManager:
         """
         if not os.path.isfile(path):
             if path != "linkook/provider/provider.json":
-                print(f"[WARN] Local provider.json not found at: {path}")
-                raise FileNotFoundError(f"Local provider.json not found at: {path}")
+                print(f"{Fore.RED}Local provider.json not found at: {path}{Style.RESET_ALL}")
+                raise FileNotFoundError
             else:
                 path = files("linkook.provider").joinpath("provider.json")
         with open(path, "r", encoding="utf-8") as f:
