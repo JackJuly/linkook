@@ -29,3 +29,7 @@ __pycache__/
 
 # neo4j json
 neo4j_export.json
+
+.claude/
+
+debian/

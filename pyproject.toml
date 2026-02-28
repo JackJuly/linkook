@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "linkook"
 version = "1.1.2"
@@ -6,14 +10,18 @@ authors = [
 ]
 description = "A tool for scanning and enumerating linked social accounts."
 readme = "README.md"
-license = "MIT"
 requires-python = ">=3.7"
+license = { text = "MIT" }
+
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
+
 dependencies = [
     "requests>=2",
-    "colorama>=0.4.6"
+    "colorama>=0.4.6",
 ]
+
+[project.scripts]
+linkook = "linkook.linkook:main"
