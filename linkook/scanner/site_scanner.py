@@ -2,6 +2,7 @@
 
 import re
 import logging
+import threading
 import requests
 from linkook.provider.provider import Provider
 from typing import Set, Dict, Any, Optional, Tuple, List
@@ -20,11 +21,15 @@ class SiteScanner:
         self.visited_urls = set()  # Set of visited URLs
         self.found_accounts = {}  # Dictionary of found accounts
         self.found_usernames = set()  # Set of found usernames
-        self.found_emails = set()  # Set of found emails
+        self.found_emails = {}  # Mapping of email -> breached flag
         self.found_passwords = set()  # Set of found passwords
         self.breach_count = set()  # Dictionary of breach count
         self.check_breach = False  # Flag to check Hudson Rock breach
         self.hibp_key = None  # HaveIBeenPwned API key
+
+        # Protects the shared containers above, since deep_scan runs
+        # concurrently from multiple worker threads.
+        self._lock = threading.Lock()
 
         self.email_regex = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
 
@@ -43,10 +48,12 @@ class SiteScanner:
 
         profile_url = provider.build_url(user)
 
-        if profile_url in self.visited_urls:
-            logging.debug(f"URL {profile_url} already visited")
-            return result
-        self.visited_urls.add(profile_url)
+        # Atomically claim this URL so two worker threads never scan it twice.
+        with self._lock:
+            if profile_url in self.visited_urls:
+                logging.debug(f"URL {profile_url} already visited")
+                return result
+            self.visited_urls.add(profile_url)
 
         result["profile_url"] = profile_url
 
@@ -68,36 +75,39 @@ class SiteScanner:
         result["other_usernames"] = search_res["other_usernames"]
         result["infos"] = search_res["infos"]
 
-        self.found_usernames.update(result["other_usernames"])
-        if result["infos"]["emails"]:
-            found_email_tuple = tuple(sorted(result["infos"]["emails"].items()))
-            self.found_emails.update(found_email_tuple)
+        with self._lock:
+            self.found_usernames.update(result["other_usernames"])
+            if result["infos"]["emails"]:
+                self.found_emails.update(result["infos"]["emails"])
 
-        if result["infos"]["passwords"]:
-            found_pass_tuple = tuple((key, tuple(value)) for key, value in result["infos"]["passwords"].items())
-            self.found_passwords.update(found_pass_tuple)
+            if result["infos"]["passwords"]:
+                found_pass_tuple = tuple(
+                    (key, tuple(value))
+                    for key, value in result["infos"]["passwords"].items()
+                )
+                self.found_passwords.update(found_pass_tuple)
 
-        if result["infos"]["breach_count"]:
-            breach_count_tuple = tuple((key, value) for key, value in result["infos"]["breach_count"].items())
-            self.breach_count.update(breach_count_tuple)
+            if result["infos"]["breach_count"]:
+                breach_count_tuple = tuple(result["infos"]["breach_count"].items())
+                self.breach_count.update(breach_count_tuple)
 
-        if provider.name not in self.found_accounts:
-            self.found_accounts[provider.name] = set()
-        self.found_accounts[provider.name].add(profile_url)
+            self.found_accounts.setdefault(provider.name, set()).add(profile_url)
 
-        for pname, urls in result["other_links"].items():
-            provider = self.all_providers.get(pname)
-            if pname not in self.found_accounts:
-                self.found_accounts[pname] = set()
-            if isinstance(urls, list):
+            for pname, urls in result["other_links"].items():
+                linked_provider = self.all_providers.get(pname)
+                if linked_provider is None:
+                    logging.debug(f"Unknown linked provider referenced: {pname}")
+                    continue
+                if isinstance(urls, str):
+                    urls = [urls]
+                account_urls = self.found_accounts.setdefault(pname, set())
                 for url in urls:
-                    username = provider.extract_user(url).pop()
-                    url = provider.build_url(username)
-                    self.found_accounts[pname].add(url)
-            else:
-                username = provider.extract_user(url).pop()
-                url = provider.build_url(username)
-                self.found_accounts[pname].add(urls)
+                    username = linked_provider.extract_single_user(url)
+                    if username is None:
+                        # No username parsed from the link; keep the raw URL.
+                        account_urls.add(url)
+                        continue
+                    account_urls.add(linked_provider.build_url(username))
 
         return result
 
@@ -169,17 +179,17 @@ class SiteScanner:
 
     def fetch_user_profile(
         self, user: str, current_provider: Provider
-    ) -> Tuple[Optional[int], Optional[str], list]:
+    ) -> Tuple[Optional[int], Optional[str]]:
         """
-        Overrides the base method to return status_code, HTML content, and redirect history.
-        If an exception occurs or the request fails, returns (None, None, []).
+        Fetch a user's profile page and return its status code and HTML content.
+        If an exception occurs or the request fails, returns (None, None).
 
         :param user: The username to fetch.
-        :return: A tuple (status_code, html_content, redirect_history).
+        :return: A tuple (status_code, html_content).
         """
 
         provider = current_provider
-        method = provider.request_method or "GET"
+        method = (provider.request_method or "GET").upper()
         headers = {
             "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:129.0) Gecko/20100101 Firefox/129.0",
         }
@@ -200,19 +210,18 @@ class SiteScanner:
                     "http": self.proxy,
                     "https": self.proxy,
                 }
-            if method == "GET":
-                logging.info(f"Fetching URL: {url}")
-                resp = session.get(
-                    url, headers=headers, timeout=self.timeout, allow_redirects=True
-                )
-            elif method.upper() == "POST":
-                logging.info(f"Fetching URL: {url}")
-                resp = requests.post(
+            logging.info(f"Fetching URL: {url}")
+            if method == "POST":
+                resp = session.post(
                     url,
                     json=payload,
                     headers=headers,
                     timeout=self.timeout,
                     allow_redirects=True,
+                )
+            else:
+                resp = session.get(
+                    url, headers=headers, timeout=self.timeout, allow_redirects=True
                 )
             logging.info(f"Response status code: {resp.status_code}")
             return resp.status_code, resp.text
@@ -220,7 +229,7 @@ class SiteScanner:
             logging.error(f"Failed to fetch profile page for URL {url}: {e}")
             return None, None
 
-    def search_in_response(self, html: str, current_provider: Provider) -> bool:
+    def search_in_response(self, html: str, current_provider: Provider) -> Dict[str, Any]:
 
         result: Dict[str, Any] = {
             "other_links": {},
@@ -240,8 +249,12 @@ class SiteScanner:
         if provider.has_email:
             emails_set = self.search_info(html)["emails"]
             for email in emails_set:
-                if email in self.found_emails:
-                    result["infos"]["emails"][email] = self.found_emails[email]
+                with self._lock:
+                    cached = email in self.found_emails
+                    if cached:
+                        result["infos"]["emails"][email] = self.found_emails[email]
+                if cached:
+                    continue
                 else:
                     if self.check_breach:
                         if self.hibp_key is not None:
@@ -301,7 +314,6 @@ class SiteScanner:
         discovered = {}
         for prov in provider_list:
             matches = prov.extract_links(html)
-            matches = matches
             if matches:
                 discovered[prov.name] = matches
         return discovered
@@ -376,10 +388,14 @@ class SiteScanner:
         if status_code == 404:
             return False
         if status_code == 200:
-            json_content = res.json()
-            if json_content["message"] == associated_string:
+            try:
+                json_content = res.json()
+            except ValueError:
+                return False
+            message = json_content.get("message")
+            if message == associated_string:
                 return True
-            elif json_content["message"] == not_associated_string:
+            elif message == not_associated_string:
                 return False
         return False
 

@@ -148,7 +148,7 @@ def parse_arguments() -> argparse.Namespace:
         nargs="?",
         metavar="PATH",
         const="provider.json",
-        default="linkook/provider/provider.json",
+        default=None,
         help="Force the use of the local provider.json file, add a custom path if needed. Default is 'provider.json'.",
     )
     return parser.parse_args()
