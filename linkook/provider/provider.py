@@ -127,21 +127,30 @@ class Provider:
             return ""
         return self.interpolate_user(self.request_payload, user)
 
-    def build_regex(self) -> str:
+    def build_regex(self) -> None:
         """
-        Build the complete regex by substituting the user
-        into this provider's regex template.
+        Build the link/username regex patterns from this provider's URL template.
 
-        :return: A full regex, or empty string if user_regex is not set.
+        The literal parts of the URL template are escaped with ``re.escape`` so
+        that characters such as ``.``, ``?`` and ``+`` (common in query strings)
+        are matched literally instead of being treated as regex metacharacters.
+        Only the username placeholder is replaced by a character-class pattern.
         """
+        template = self.regex_url if self.regex_url else self.profile_url
+        if not template:
+            self._link_regex = None
+            self._user_regex = None
+            return
+
         # regex_pattern = "(?:(?!&quot;)[^<>()\[\]'?\"\\\\])+"
-        regex_pattern = r"[A-Za-z0-9._=+\-]+"
-        link_pattern = self.build_regex_url(regex_pattern)
-        self._link_regex = re.compile(link_pattern) if link_pattern else None
+        char_class = r"[A-Za-z0-9._=+\-]+"
+        escaped_parts = [re.escape(part) for part in template.split("^USER^")]
 
-        regex_pattern_catch = f"({regex_pattern})"
-        user_pattern = self.build_regex_url(regex_pattern_catch)
-        self._user_regex = re.compile(user_pattern) if user_pattern else None
+        link_pattern = char_class.join(escaped_parts)
+        user_pattern = f"({char_class})".join(escaped_parts)
+
+        self._link_regex = re.compile(link_pattern)
+        self._user_regex = re.compile(user_pattern)
 
     def interpolate_user(self, input_object, user):
 
@@ -182,6 +191,21 @@ class Provider:
         result = self._user_regex.findall(text)
         unique_username = set(result)
         return unique_username
+
+    def extract_single_user(self, text: str) -> Optional[str]:
+        """
+        Extract a single username from the given text.
+
+        Unlike ``extract_user(...).pop()``, this never raises when no username
+        matches: it returns ``None`` instead of raising ``KeyError``.
+
+        :param text: A string that might contain a URL to this provider.
+        :return: One matched username, or ``None`` if nothing matched.
+        """
+        matches = self.extract_user(text)
+        if not matches:
+            return None
+        return next(iter(matches))
 
     def extract_handle(self, prov_name: str, text: str) -> str:
         """

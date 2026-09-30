@@ -209,7 +209,7 @@ v1.1.2                                                     - by @JackJu1y
         username = print_content.get("username")
         found_accounts = print_content.get("found_accounts", {})
         found_usernames = print_content.get("found_usernames", set())
-        found_emails = print_content.get("found_emails", set())
+        found_emails = print_content.get("found_emails", {})
         found_passwords = print_content.get("found_passwords", set())
 
         passwords_dict = {email: passwords for email, passwords in found_passwords}
@@ -218,7 +218,7 @@ v1.1.2                                                     - by @JackJu1y
         total_sites = len(found_accounts)
 
         found_usernames.discard(username)
-        breached_emails = [email for email, status in found_emails if status]
+        breached_emails = [email for email, status in found_emails.items() if status]
 
         count_usernames = len(found_usernames)
         count_emails = len(found_emails)
@@ -268,14 +268,14 @@ v1.1.2                                                     - by @JackJu1y
                 )
             if found_emails:
                 print(
-                    f"{Fore.CYAN}Related Emails: {Style.BRIGHT}{', '.join(email for email, _ in found_emails)}{Style.RESET_ALL}"
+                    f"{Fore.CYAN}Related Emails: {Style.BRIGHT}{', '.join(found_emails)}{Style.RESET_ALL}"
                 )
             if breached_emails:
                 breached_str = []
                 for email in breached_emails:
                     if email in passwords_dict and passwords_dict[email]:
-                        str = ", ".join(passwords_dict[email])
-                        breached_str.append(f"{email}({Fore.MAGENTA}{str}{Fore.RED})")
+                        pw_str = ", ".join(passwords_dict[email])
+                        breached_str.append(f"{email}({Fore.MAGENTA}{pw_str}{Fore.RED})")
                     else:
                         breached_str.append(email)
                     
@@ -296,16 +296,37 @@ v1.1.2                                                     - by @JackJu1y
             )
             print(f"{email_message}\n")
 
+    # Maximum number of browser tabs to open with --browse, to avoid flooding
+    # the user's browser when many profiles are found.
+    MAX_BROWSE_TABS = 10
+
     def browse_results(self, results: Dict[str, Dict[str, Any]]):
         """
-        Browse to all found profile URLs in the default web browser.
+        Browse to found profile URLs in the default web browser.
+
+        At most ``MAX_BROWSE_TABS`` tabs are opened; if more profiles were found,
+        the remainder are skipped and a note is printed (they are still in the
+        saved results).
 
         :param results: A dictionary containing scan results for each site.
         """
-        for site, data in results.items():
-            if data["found"]:
-                try:
-                    webbrowser.open(data["profile_url"])
-                    logging.info(f"Opened browser for {site}: {data['profile_url']}")
-                except Exception as e:
-                    logging.error(f"Failed to open browser for {site}: {e}")
+        found = [
+            (site, data["profile_url"])
+            for site, data in results.items()
+            if data.get("found") and data.get("profile_url")
+        ]
+
+        for site, profile_url in found[: self.MAX_BROWSE_TABS]:
+            try:
+                webbrowser.open(profile_url)
+                logging.info(f"Opened browser for {site}: {profile_url}")
+            except Exception as e:
+                logging.error(f"Failed to open browser for {site}: {e}")
+
+        remaining = len(found) - self.MAX_BROWSE_TABS
+        if remaining > 0:
+            print(
+                f"{Fore.YELLOW}Opened the first {self.MAX_BROWSE_TABS} profiles in your "
+                f"browser; {remaining} more were found and skipped "
+                f"(see the saved results).{Style.RESET_ALL}"
+            )

@@ -154,8 +154,10 @@ class Neo4jVisualizer:
             profile_url = data.get("profile_url", "")
             # Dynamically extract the username using the Provider class
             provider = self.all_providers.get(platform)
+            if provider is None:
+                continue
             if not provider.is_userid:
-                sm_username = provider.extract_user(profile_url).pop()
+                sm_username = provider.extract_single_user(profile_url) or ""
             else:
                 sm_username = ""
 
@@ -184,8 +186,10 @@ class Neo4jVisualizer:
             for linked_platform, urls in other_links.items():
                 for url in urls:
                     provider = self.all_providers.get(linked_platform)
+                    if provider is None:
+                        continue
                     if not provider.is_userid:
-                        linked_username = provider.extract_user(url).pop()
+                        linked_username = provider.extract_single_user(url) or ""
                     else:
                         linked_username = ""
                     # Create associated SocialMediaAccount node

@@ -60,7 +60,9 @@ class ScannerManager:
             for url in linked_urls:
                 if url in self.scanner.visited_urls:
                     continue
-                new_user = linked_provider_obj.extract_user(url).pop()
+                new_user = linked_provider_obj.extract_single_user(url)
+                if new_user is None:
+                    continue
                 if new_user != user:
                     self.queue.put((new_user, linked_provider, True))
 
@@ -92,8 +94,8 @@ class ScannerManager:
             self.queue.put((self.user, provider, False))
 
         threads = []
-        
-        for _ in range(5): 
+
+        for _ in range(self.num_threads):
             t = threading.Thread(target=self._worker, daemon=True)
             t.start()
             threads.append(t)
