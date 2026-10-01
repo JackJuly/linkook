@@ -56,7 +56,7 @@ class ConsolePrinter:
  \ \_____\  \ \_\  \ \_\\"\_\  \ \_\ \_\  \ \_____\  \ \_____\  \ \_\ \_\ 
   \/_____/   \/_/   \/_/ \/_/   \/_/\/_/   \/_____/   \/_____/   \/_/\/_/ 
 
-v1.1.2                                                     - by @JackJu1y
+v1.1.3                                                     - by @JackJu1y
 """
         print(f"{Fore.CYAN}{Style.BRIGHT}{banner}{Style.RESET_ALL}")
 

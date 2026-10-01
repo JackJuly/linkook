@@ -448,7 +448,7 @@
         "mainUrl": "https://www.deviantart.com",
         "profileUrl": "https://www.deviantart.com/^USER^",
         "keyword": {
-            "notMatch": ["Browse Art"]
+            "notMatch": ["Llama Not Found"]
         }
     },
     "Codeforces": {
