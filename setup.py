@@ -14,7 +14,7 @@ if os.path.isfile(readme_path):
 
 setup(
     name="linkook",
-    version="1.1.2",
+    version="1.1.3",
     author="Jack Ju1y",
     author_email="ju1y0x0@proton.me",
     description="A tool for scanning and enumerating linked social accounts.",
